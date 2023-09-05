@@ -30,6 +30,7 @@ class DCMotorControl {
 
         // desired output rpm
         int consigne_redcuteur_rpm = 0 ; // rpm
+        int consigne_reducteur_degre = 0; // °
 
         // motor properties
         float rapport_reduction = 1/297.92 ; //gear ratio
@@ -47,11 +48,13 @@ class DCMotorControl {
         int encoderPinB; //= 3;  // Encoder signal B
 
         // control variables
-        float gamma = 10; // gain
-        float vitesse_reducteur = 0; //measured speed
+        float gamma_rpm = 10; // gain for speed control
+        float gamma_degre = 30; // gain for position control
+        float vitesse_reducteur = 0; //measured speed rpm
+        float angularPosition_reducteur = 0; //measured position degres
         volatile float error = 0;
         volatile float previous_error = 0;
-        volatile float last_error = 0;
+        // volatile float last_error = 0;
         volatile float sum_error = 0;
         
         // Constructor (used to create an instance of the class)
@@ -76,7 +79,7 @@ class DCMotorControl {
         void getSpeedCommand();
 
         // Function for updating the asservissement of position for one iteration
-        // void asservissementPosition();
+        void getPositionCommand();
 
         // Function to control the DC Motor with voltage
         void operateMotor(int sens, int voltageInBits);

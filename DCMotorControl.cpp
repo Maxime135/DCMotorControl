@@ -86,7 +86,7 @@ void DCMotorControl::getSpeedCommand(){
     vitesse_reducteur = ((float)encoderCount / (float)ticks_par_tour) * (float)freq_effectif * 60.0 * rapport_reduction ; //rpm
     
     // Calcul of error
-    last_error = error;
+    // last_error = error;
 
     if (consigne_redcuteur_rpm < 0) {
         sens = 1;
@@ -107,7 +107,7 @@ void DCMotorControl::getSpeedCommand(){
     // cmd = Kp * error + Ki *sum_error + Kd * (error - last_error)*(float)freq_echant ;
 
 
-    cmd = previous_cmd + gamma*(error - exp(-beta/((float)freq_echant*J)) * previous_error);
+    cmd = previous_cmd + gamma_rpm*(error - exp(-beta/((float)freq_echant*J)) * previous_error);
     previous_error = error;
     previous_cmd = cmd;
     //cmd = 255;
@@ -141,6 +141,44 @@ void DCMotorControl::getSpeedCommand(){
 }
 
 
+// Function for updating the asservissement of position for one iteration
+void DCMotorControl::getPositionCommand(){
+    // Time
+    previous_time = time;
+    time = millis()*0.001;
+    freq_effectif = 1/(time-previous_time);
+
+    // Calcul of angular position reducteur
+
+    angularPosition_reducteur = (float)encoderCount/(float)ticks_par_tour * rapport_reduction * 360  ; // in °
+
+    // Calcul of error
+    // last_error = error;
+    error = (float)consigne_reducteur_degre - angularPosition_reducteur  ; // in °
+
+    if (error < 0) {
+        sens = 1;
+        error = -error;
+    }
+    else {
+        sens = 0;
+        
+    }
+
+
+    // Reinitialization of tick number of the encoder
+    // encoderCount = 0;
+
+    // Calcul de la commande
+    cmd = gamma_degre*(error - exp(-beta/((float)freq_echant*J)) * previous_error) ;
+    previous_error = error;
+    previous_cmd = cmd;
+
+    // Normalisation de la commande
+    if(cmd<0) cmd=0;
+    else if (cmd>255) cmd=255;
+}
+
 // Function to control the DC Motor with voltage input
 void DCMotorControl::operateMotor(int sens, int voltageInBits) {
     if (sens == 0){
@@ -161,6 +199,9 @@ void DCMotorControl::operateMotor(int sens, int voltageInBits) {
 
 // Function to plot signal in the Serial Plotter
 void DCMotorControl::plotSignals() {
+    Serial.print("Position_reducteur:");
+    Serial.println(angularPosition_reducteur);
+    Serial.print(",");
     Serial.print("Vitesse_reducteur:");
     Serial.println(vitesse_reducteur);
     Serial.print(",");
@@ -170,12 +211,15 @@ void DCMotorControl::plotSignals() {
     Serial.print("Cmd:");
     Serial.println(cmd);
     Serial.print(",");
-    Serial.print("Consigne:");
+    Serial.print("Desired position:");
+    Serial.println(consigne_reducteur_degre);
+    Serial.print(",");
+    Serial.print("Desired speed:");
     Serial.println(consigne_redcuteur_rpm);
-    // Serial.print(",");
+    Serial.print(",");
     // Serial.print("dT (s):");
     // Serial.println((time-previous_time));
-    Serial.print(",");
+    // Serial.print(",");
     Serial.print("freq:");
     Serial.println(freq_echant);
 }
